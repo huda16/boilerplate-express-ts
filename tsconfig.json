@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "NodeNext", // Change this to NodeNext
+    "moduleResolution": "NodeNext", // Keep this as NodeNext
+    "resolveJsonModule": true,
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -10,6 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./src"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "generate-model.ts",
+    "sequelize.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
