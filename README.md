@@ -44,11 +44,24 @@ Make sure you have the following installed:
 
 3. Create a .env file in the root directory and add your environment variables:
    ```bash
-    DB_NAME=
-    DB_USER=
-    DB_PASSWORD=
-    DB_HOST=
-    DB_PORT=
+    APP_HOST=http://localhost
+    APP_PORT=3000
+
+    DB_HOST=127.0.0.1
+    DB_PORT=1539
+    DB_USERNAME_AUTH=auth
+    DB_PASSWORD_AUTH=root
+    DB_USERNAME_MASTER_DATA=master_data
+    DB_PASSWORD_MASTER_DATA=root
+    DB_USERNAME_INVENTORY=inventory
+    DB_PASSWORD_INVENTORY=root
+    DB_USERNAME_TRANSACTION=transaction
+    DB_PASSWORD_TRANSACTION=root
+    DB_SID=FREEPDB1
+
+## Create File Migration using Entity
+   ```bash
+    npm run typeorm migration:generate ./src/migration/name-file -- -d ./src/services/database/oracle/data-source-file.ts
 
 ## Usage
 To start the development server, run:
