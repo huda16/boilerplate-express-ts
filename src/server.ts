@@ -1,12 +1,12 @@
 import app from "./app.js";
 import "reflect-metadata";
-import { AppDataSource } from "./data-source.js";
+import { OracleDataSourceAuth } from "./services/database/oracle/data-source.js";
 
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
-    AppDataSource.initialize();
+    OracleDataSourceAuth.initialize();
 
     console.log("Database connection established successfully.");
 

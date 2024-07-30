@@ -1,29 +1,29 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
-@Entity()
-export class User {
+@Entity({ name: "users" })
+export class Users {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: "varchar2", length: 255, nullable: false })
   firstName!: string;
 
-  @Column()
+  @Column({ type: "varchar2", length: 255, nullable: false })
   lastName!: string;
 
-  @Column()
+  @Column({ type: "number", nullable: false })
   age!: number;
 
-  @Column({ type: "varchar", length: 255, nullable: false })
+  @Column({ type: "varchar2", length: 255, nullable: false })
   name!: string;
 
-  @Column({ type: "varchar", length: 255, nullable: false })
+  @Column({ type: "varchar2", length: 255, nullable: false })
   username!: string;
 
-  @Column({ type: "varchar", length: 255, nullable: false })
+  @Column({ type: "varchar2", length: 255, nullable: false })
   email!: string;
 
-  @Column({ type: "varchar", length: 255, nullable: true })
+  @Column({ type: "varchar2", length: 255, nullable: true })
   phone: string | null = null;
 
   constructor(
