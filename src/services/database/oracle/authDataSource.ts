@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { Users } from "../../../entity/auth/Users.js";
+import { Users } from "../../../entities/auth/Users.js";
 import dotenv from "dotenv";
 
 dotenv.config();
