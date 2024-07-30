@@ -1,11 +1,13 @@
 import app from "./app.js";
-import { sequelize } from "./models/index.js"; // Assuming you will set up Sequelize in models/index.ts
+import "reflect-metadata";
+import { AppDataSource } from "./data-source.js";
 
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
-    await sequelize.authenticate(); // Test DB connection
+    AppDataSource.initialize();
+
     console.log("Database connection established successfully.");
 
     app.listen(PORT, () => {
