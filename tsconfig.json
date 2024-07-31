@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
-    "lib": ["es5", "es6"],
     "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -11,7 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./src",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "sourceMap": true,
+    "incremental": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

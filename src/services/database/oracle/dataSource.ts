@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const OracleDataSourceAuth = new DataSource({
+export const OracleDataSource = new DataSource({
   type: "oracle",
   host: process.env.DB_HOST,
   username: process.env.DB_USERNAME_AUTH,

@@ -23,3 +23,5 @@ Thumbs.db
 
 # SQL files
 *.sql
+
+coverage/
