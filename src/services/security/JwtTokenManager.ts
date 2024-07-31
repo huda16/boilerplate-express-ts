@@ -20,7 +20,7 @@ class JwtTokenManager extends AuthenticationTokenManager {
     try {
       jwt.verify(token, process.env.REFRESH_TOKEN_KEY as string);
     } catch (error) {
-      throw new InvariantError("refresh token tidak valid");
+      throw new InvariantError("Refresh token invalid");
     }
   }
 

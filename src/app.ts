@@ -4,6 +4,7 @@ import routes from "./routes/index";
 import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
+import { errorHandler } from "./middlewares/errorHandler";
 
 dotenv.config();
 
@@ -26,5 +27,8 @@ app.use(morgan("tiny"));
 
 // Define your routes
 app.use("/api", routes);
+
+// Error handling middleware
+app.use(errorHandler);
 
 export default app;

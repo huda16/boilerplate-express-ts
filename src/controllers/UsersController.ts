@@ -1,71 +1,73 @@
-import { Request, Response } from "express";
-import UsersRepository from "../repositories/auth/UsersRepository"; // Adjust the import path based on your project structure
+import { Request, Response, NextFunction } from "express";
+import UsersRepository from "../repositories/auth/UsersRepository";
+import { sendSuccessResponse } from "../utils/helpers/responseHelpers";
+import NotFoundError from "../utils/exceptions/NotFoundError";
 
 class UsersController {
   // Create a new user
-  async createUser(req: Request, res: Response) {
+  async createUser(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await UsersRepository.create(req.body);
-      return res.status(201).json(user);
+      return sendSuccessResponse(res, user, 201);
     } catch (error) {
       console.error("Error creating user:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      next(error);
     }
   }
 
   // Get all users
-  async getAllUsers(req: Request, res: Response) {
+  async getAllUsers(req: Request, res: Response, next: NextFunction) {
     try {
       const users = await UsersRepository.findAll();
-      return res.status(200).json(users);
+      return sendSuccessResponse(res, users, 200);
     } catch (error) {
       console.error("Error retrieving users:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      next(error);
     }
   }
 
   // Get a user by ID
-  async getUserById(req: Request, res: Response) {
+  async getUserById(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
     try {
       const user = await UsersRepository.findById(Number(id));
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return next(new NotFoundError("User not found")); 
       }
-      return res.status(200).json(user);
+      return sendSuccessResponse(res, user, 200);
     } catch (error) {
       console.error("Error retrieving user:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      next(error);
     }
   }
 
   // Update a user by ID
-  async updateUser(req: Request, res: Response) {
+  async updateUser(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
     try {
       const updatedUser = await UsersRepository.update(Number(id), req.body);
       if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
+        return next(new NotFoundError("User not found")); 
       }
-      return res.status(200).json(updatedUser);
+      return sendSuccessResponse(res, updatedUser, 200);
     } catch (error) {
       console.error("Error updating user:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      next(error);
     }
   }
 
   // Delete a user by ID
-  async deleteUser(req: Request, res: Response) {
+  async deleteUser(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
     try {
       const deleted = await UsersRepository.delete(Number(id));
       if (!deleted) {
-        return res.status(404).json({ message: "User not found" });
+        return next(new NotFoundError("User not found")); 
       }
-      return res.status(204).send(); // No content
+      return sendSuccessResponse(res, `User with ID ${id} successfully deleted`, 201);
     } catch (error) {
       console.error("Error deleting user:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      next(error);
     }
   }
 }
