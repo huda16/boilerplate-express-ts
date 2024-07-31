@@ -22,6 +22,35 @@ A boilerplate project for building RESTful APIs with Express.js and TypeScript, 
 - ESLint for code linting
 - Nodemon for development
 
+## Project Structure
+
+The project is organized into the following directories and files:
+
+.
+├── src
+│ ├── controllers
+│ ├── entities 
+│ ├── middlewares
+│ ├── migrations
+│ ├── repositories
+│ ├── routes
+│ ├── seeders
+│ ├── services
+│ ├── types 
+│ ├── utils
+│ ├── app.ts
+│ └── server.ts
+├── tests
+├── .env.example
+├── .eslintignore
+├── .gitignore
+├── eslint.config.mjs
+├── nodemon.json
+├── package-lock.json
+├── package.json
+├── README.md
+└── tsconfig.json
+
 ## Prerequisites
 
 Make sure you have the following installed:
