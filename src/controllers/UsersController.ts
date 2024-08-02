@@ -59,12 +59,14 @@ class UsersController {
   // Delete a user by ID
   async deleteUser(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
+    const permanent = req.query.permanent === "true";
+
     try {
-      const deleted = await UsersRepository.delete(Number(id));
+      const deleted = await UsersRepository.delete(Number(id), permanent);
       if (!deleted) {
         return next(new NotFoundError("User not found")); 
       }
-      return sendSuccessResponse(res, `User with ID ${id} successfully deleted`, 201);
+      return sendSuccessResponse(res, `User with ID ${id} successfully deleted`, 200);
     } catch (error) {
       console.error("Error deleting user:", error);
       next(error);

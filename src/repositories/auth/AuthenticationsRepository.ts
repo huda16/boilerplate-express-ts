@@ -4,7 +4,7 @@ import BcryptPasswordHash from "../../services/security/BcryptPasswordHash";
 import JwtTokenManager from "../../services/security/JwtTokenManager";
 import UsersRepository from "./UsersRepository";
 import AuthenticationError from "../../utils/exceptions/AuthenticationError";
-import InvariantError from "utils/exceptions/InvariantError";
+import ValidationError from "utils/exceptions/ValidationError";
 
 class AuthenticationsRepository extends StandardRepo<Authentications> {
   private passwordHash: BcryptPasswordHash;
@@ -19,15 +19,12 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
   }
 
   // Create authentication tokens for a user
-  async createToken(
-    data: any
-  ): Promise<{
+  async createToken(data: any): Promise<{
     accessToken: string;
     accessTokenExpiresAt: string;
     refreshToken: string;
     refreshTokenExpiresAt: string;
   }> {
-    
     if (!this.repository) {
       throw new Error("Repository not initialized");
     }
@@ -36,7 +33,7 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
       username: data.username,
     });
     if (!user) {
-      throw new AuthenticationError("User not found");
+      throw new ValidationError("User not found");
     }
 
     const isPasswordValid = await this.passwordHash.comparePassword(
@@ -52,8 +49,8 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
     const refreshToken = await this.tokenManager.createRefreshToken(payload);
     const accessDecode = await this.tokenManager.decodePayload(accessToken);
     const refreshDecode = await this.tokenManager.decodePayload(refreshToken);
-    const accessTokenExpiresAt = accessDecode.exp; 
-    const refreshTokenExpiresAt = refreshDecode.exp; 
+    const accessTokenExpiresAt = accessDecode.exp;
+    const refreshTokenExpiresAt = refreshDecode.exp;
 
     const entity = this.repository.create({
       token: refreshToken,
@@ -66,57 +63,77 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
       refreshToken,
       refreshTokenExpiresAt,
     };
-    
   }
 
   // Refresh authentication tokens
-  // async refresh(
-  //   refreshToken: string
-  // ): Promise<{ accessToken: string; refreshToken: string }> {
-  //   try {
-  //     if (!this.repository) {
-  //       throw new Error("Repository not initialized");
-  //     }
+  async refresh(data: { refreshToken: string }): Promise<{
+    accessToken: string;
+    accessTokenExpiresAt: string;
+    refreshToken: string;
+    refreshTokenExpiresAt: string;
+  }> {
+    if (!this.repository) {
+      throw new Error("Repository not initialized");
+    }
 
-  //     await this.tokenManager.verifyRefreshToken(refreshToken);
-  //     const payload = await this.tokenManager.decodePayload(refreshToken);
-  //     const accessToken = await this.tokenManager.createAccessToken(payload);
-  //     const newRefreshToken = await this.tokenManager.createRefreshToken(
-  //       payload
-  //     );
+    const refreshToken = await this.repository.findOneBy({
+      token: data.refreshToken,
+    } as Partial<Authentications>);
 
-  //     // Update the refresh token in the database
-  //     const entity = await this.repository.findOneBy({
-  //       token: refreshToken,
-  //     } as Partial<Authentications>);
-  //     if (entity) {
-  //       entity.token = newRefreshToken;
-  //       await this.repository.save(entity);
-  //     }
+    if (!refreshToken) {
+      throw new ValidationError("Refresh token invalid");
+    }
 
-  //     return { accessToken, refreshToken: newRefreshToken };
-  //   } catch (error) {
-  //     throw DomainErrorTranslator.translate(error);
-  //   }
-  // }
+    await this.tokenManager.verifyRefreshToken(data.refreshToken);
+    const payload = await this.tokenManager.decodePayload(data.refreshToken);
 
-  // // Delete a refresh token
-  // async deleteToken(token: string): Promise<void> {
-  //   try {
-  //     if (!this.repository) {
-  //       throw new Error("Repository not initialized");
-  //     }
+    // Remove the exp property from the payload
+    const { exp, ...newPayload } = payload;
 
-  //     const entity = await this.repository.findOneBy({
-  //       token,
-  //     } as Partial<Authentications>);
-  //     if (entity) {
-  //       await this.repository.remove(entity);
-  //     }
-  //   } catch (error) {
-  //     throw DomainErrorTranslator.translate(error);
-  //   }
-  // }
+    const accessToken = await this.tokenManager.createAccessToken(newPayload);
+    const newRefreshToken = await this.tokenManager.createRefreshToken(
+      newPayload
+    );
+    const accessDecode = await this.tokenManager.decodePayload(accessToken);
+    const refreshDecode = await this.tokenManager.decodePayload(
+      newRefreshToken
+    );
+    const accessTokenExpiresAt = accessDecode.exp;
+    const refreshTokenExpiresAt = refreshDecode.exp;
+
+    // Update the refresh token in the database
+    const entity = await this.repository.findOneBy({
+      token: data.refreshToken,
+    } as Partial<Authentications>);
+    if (entity) {
+      entity.token = newRefreshToken;
+      await this.repository.save(entity);
+    }
+
+    return {
+      accessToken,
+      accessTokenExpiresAt,
+      refreshToken: newRefreshToken,
+      refreshTokenExpiresAt,
+    };
+  }
+
+  // Delete a refresh token
+  async deleteToken(data: { refreshToken: string }): Promise<void> {
+    if (!this.repository) {
+      throw new Error("Repository not initialized");
+    }
+
+    const entity = await this.repository.findOneBy({
+      token: data.refreshToken,
+    } as Partial<Authentications>);
+
+    if (!entity) {
+      throw new ValidationError("Refresh token does not exist in Database")
+    }
+
+    await this.repository.remove(entity);
+  }
 }
 
 export default new AuthenticationsRepository();

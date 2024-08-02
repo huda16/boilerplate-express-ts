@@ -34,17 +34,17 @@ router.post(
   handleValidationErrors,
   AuthenticationsController.createAuthentication
 );
-// router.put(
-//   "/authentications",
-//   validateUpdateAuth,
-//   handleValidationErrors,
-//   AuthenticationsController.updateUser
-// );
-// router.delete(
-//   "authentications",
-//   validateUpdateAuth,
-//   handleValidationErrors,
-//   AuthenticationsController.deleteUser
-// );
+router.put(
+  "/authentications",
+  validateUpdateAuth,
+  handleValidationErrors,
+  AuthenticationsController.updateAuthentication
+);
+router.delete(
+  "/authentications",
+  validateUpdateAuth,
+  handleValidationErrors,
+  AuthenticationsController.deleteAuthentication
+);
 
 export default router;

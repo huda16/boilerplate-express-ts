@@ -6,5 +6,6 @@ export const validateCreateAuth = [
 ];
 
 export const validateUpdateAuth = [
-  body("refreshToken").notEmpty().withMessage("Name cannot be empty"),
+  body("refreshToken").notEmpty().withMessage("Refresh token cannot be empty"),
+  body("refreshToken").isString().withMessage("Refresh token must be string"),
 ];

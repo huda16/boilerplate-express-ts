@@ -18,9 +18,21 @@ class JwtTokenManager extends AuthenticationTokenManager {
 
   async verifyRefreshToken(token: string): Promise<void> {
     try {
+      if (!process.env.REFRESH_TOKEN_KEY) {
+        throw new InvariantError("Refresh token key is not defined");
+      }
+
+      if (typeof token !== "string") {
+        throw new InvariantError("Refresh token must be a string");
+      }
+
       jwt.verify(token, process.env.REFRESH_TOKEN_KEY as string);
     } catch (error) {
-      throw new InvariantError("Refresh token invalid");
+      console.error("Error verifying refresh token:", error);
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new InvariantError("Refresh token invalid");
+      }
+      throw new Error("Unexpected error verifying refresh token");
     }
   }
 

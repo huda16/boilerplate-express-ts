@@ -88,9 +88,14 @@ Make sure you have the following installed:
     DB_PASSWORD_TRANSACTION=root
     DB_SID=FREEPDB1
 
-## Create File Migration using Entity
+## Migration
    ```bash
-    npm run typeorm migration:generate ./src/migration/name-file -- -d ./src/services/database/oracle/data-source-file.ts
+    # Create File Migration using Entity 
+    npm run typeorm migration:generate ./src/migrations/file-name -- -d ./src/services/database/oracle/dataSource.ts
+
+    # Run Migration
+    npm run typeorm migration:run -- -d ./src/services/database/oracle/dataSource.ts
+
 
 ## Usage
 To start the development server, run:

@@ -10,7 +10,7 @@
       "start": "node dist/server.js",
       "dev": "nodemon",
       "test": "jest --watchAll  --detectOpenHandles",
-      "typeorm": "typeorm-ts-node-esm"
+      "typeorm": "typeorm-ts-node-commonjs"
    },
    "dependencies": {
       "bcrypt": "^5.1.1",

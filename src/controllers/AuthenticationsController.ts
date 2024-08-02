@@ -16,42 +16,30 @@ class AuthenticationsController {
   }
 
   // Update auth
-  // async updateAuthentication(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const updatedUser = await AuthenticationsRepository.refresh(req.body);
-  //     if (!updatedUser) {
-  //       return next(new NotFoundError("User not found")); 
-  //     }
-  //     return res.status(200).json(updatedUser);
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     const errorMessage =
-  //       typeof error === "string"
-  //         ? error
-  //         : error instanceof Error
-  //         ? error.message
-  //         : "Unknown error occurred";
-  //     next(new ValidationError(errorMessage));
-  //   }
-  // }
+  async updateAuthentication(req: Request, res: Response, next: NextFunction) {
+    try {
+      const authentication = await AuthenticationsRepository.refresh(req.body);
+      if (!authentication) {
+        return next(new NotFoundError("Authentication not found")); 
+      }
+      return sendSuccessResponse(res, authentication, 200);
+    } catch (error) {
+      console.error("Error updating authentication:", error);
+      next(error);
+    }
+  }
 
-  // // Delete auth
-  // async deleteAuthentication(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     await AuthenticationsRepository.deleteToken(req.body);
+  // Delete auth
+  async deleteAuthentication(req: Request, res: Response, next: NextFunction) {
+    try {
+      await AuthenticationsRepository.deleteToken(req.body);
 
-  //     return res.status(204).send(); // No content
-  //   } catch (error) {
-  //     console.error("Error deleting user:", error);
-  //     const errorMessage =
-  //       typeof error === "string"
-  //         ? error
-  //         : error instanceof Error
-  //         ? error.message
-  //         : "Unknown error occurred";
-  //     next(new ValidationError(errorMessage));
-  //   }
-  // }
+      return sendSuccessResponse(res, "Authentication successfully deleted", 200);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      next(error);
+    }
+  }
 }
 
 export default new AuthenticationsController();

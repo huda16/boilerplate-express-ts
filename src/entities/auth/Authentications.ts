@@ -5,7 +5,7 @@ export class Authentications {
   @PrimaryGeneratedColumn({ type: "number" })
   id!: number;
 
-  @Column({ type: "clob", nullable: false })
+  @Column({ type: "varchar2", length: 512, nullable: false })
   token!: string;
 
   constructor(
