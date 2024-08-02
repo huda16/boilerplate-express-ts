@@ -13,6 +13,7 @@
       "typeorm": "typeorm-ts-node-commonjs"
    },
    "dependencies": {
+      "amqplib": "^0.10.4",
       "bcrypt": "^5.1.1",
       "cors": "^2.8.5",
       "dotenv": "^16.4.5",
@@ -22,7 +23,9 @@
       "helmet": "^7.1.0",
       "jsonwebtoken": "^9.0.2",
       "morgan": "^1.10.0",
+      "multer": "^1.4.5-lts.1",
       "oracledb": "^6.6.0",
+      "redis": "^4.7.0",
       "reflect-metadata": "^0.1.13",
       "typeorm": "^0.3.20"
    },
@@ -30,6 +33,7 @@
       "@babel/preset-env": "^7.25.2",
       "@babel/preset-typescript": "^7.24.7",
       "@eslint/js": "^9.8.0",
+      "@types/amqplib": "^0.10.5",
       "@types/bcrypt": "^5.0.2",
       "@types/cors": "^2.8.17",
       "@types/dotenv": "^8.2.0",
@@ -40,7 +44,9 @@
       "@types/jest": "^29.5.12",
       "@types/jsonwebtoken": "^9.0.6",
       "@types/morgan": "^1.9.9",
-      "@types/node": "^16.11.10",
+      "@types/multer": "^1.4.11",
+      "@types/node": "^16.18.104",
+      "@types/redis": "^4.0.11",
       "@types/supertest": "^6.0.2",
       "@typescript-eslint/eslint-plugin": "^7.17.0",
       "@typescript-eslint/parser": "^7.17.0",

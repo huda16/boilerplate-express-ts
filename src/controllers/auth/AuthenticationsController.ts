@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import AuthenticationsRepository from "../repositories/auth/AuthenticationsRepository";
-import { sendSuccessResponse } from "../utils/helpers/responseHelpers";
-import NotFoundError from "../utils/exceptions/NotFoundError";
+import AuthenticationsRepository from "../../repositories/auth/AuthenticationsRepository";
+import { sendSuccessResponse } from "../../utils/helpers/responseHelpers";
+import NotFoundError from "../../utils/exceptions/NotFoundError";
 
 class AuthenticationsController {
   // Create a new auth

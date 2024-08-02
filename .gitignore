@@ -21,6 +21,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Upload files
+uploads/
+
 # SQL files
 *.sql
 

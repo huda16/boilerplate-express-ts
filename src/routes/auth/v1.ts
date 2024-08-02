@@ -1,14 +1,21 @@
 import { Router } from "express";
-import UsersController from "../../controllers/UsersController";
+import UsersController from "../../controllers/auth/UsersController";
 import { handleValidationErrors } from "../../middlewares/validationResultMiddleware";
 import {
   validateCreateUser,
   validateUpdateUser,
-} from "../../middlewares/validations/auth/userValidation";
-import { validateCreateAuth, validateUpdateAuth } from "middlewares/validations/auth/authenticationValidation";
-import AuthenticationsController from "controllers/AuthenticationsController";
+} from "../../middlewares/validator/auth/userValidation";
+import {
+  validateCreateAuth,
+  validateUpdateAuth,
+} from "middlewares/validator/auth/authenticationValidation";
+import AuthenticationsController from "../../controllers/auth/AuthenticationsController";
+import JwtTokenManager from "../../services/security/JwtTokenManager";
+import upload from "../../middlewares/upload"; // Assuming you have an upload middleware set up
+import UploadsController from "../../controllers/UploadsController";
 
 const router = Router();
+const jwtTokenManager = new JwtTokenManager();
 
 // User routes
 router.post(
@@ -17,7 +24,11 @@ router.post(
   handleValidationErrors,
   UsersController.createUser
 );
-router.get("/users", UsersController.getAllUsers);
+router.get(
+  "/users",
+  jwtTokenManager.authenticateJWT,
+  UsersController.getAllUsers
+);
 router.get("/users/:id", UsersController.getUserById);
 router.put(
   "/users/:id",
@@ -46,5 +57,11 @@ router.delete(
   handleValidationErrors,
   AuthenticationsController.deleteAuthentication
 );
+
+// Upload route
+router.post("/uploads", upload.single("file"), (req, res, next) => {
+  // Use the UploadsController here
+  return UploadsController.uploadFile(req, res, next);
+});
 
 export default router;

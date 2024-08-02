@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import UsersRepository from "../repositories/auth/UsersRepository";
-import { sendSuccessResponse } from "../utils/helpers/responseHelpers";
-import NotFoundError from "../utils/exceptions/NotFoundError";
+import UsersRepository from "../../repositories/auth/UsersRepository";
+import { sendSuccessResponse } from "../../utils/helpers/responseHelpers";
+import NotFoundError from "../../utils/exceptions/NotFoundError";
 
 class UsersController {
   // Create a new user

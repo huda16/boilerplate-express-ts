@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import InvariantError from "../../utils/exceptions/InvariantError";
 import AuthenticationTokenManager from "../../utils/security/AuthenticationTokenManager";
+import AuthenticationError from "utils/exceptions/AuthenticationError";
+import AuthorizationError from "utils/exceptions/AuthorizationError";
 
 class JwtTokenManager extends AuthenticationTokenManager {
   async createAccessToken(payload: object): Promise<string> {
@@ -47,11 +49,11 @@ class JwtTokenManager extends AuthenticationTokenManager {
   authenticateJWT(req: Request, res: Response, next: NextFunction) {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      return res.sendStatus(401);
+      throw new AuthenticationError("Unauthorized");
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_KEY as string, (err) => {
       if (err) {
-        return res.sendStatus(403);
+        throw new AuthorizationError("You don't have permissions")
       }
       next();
     });
