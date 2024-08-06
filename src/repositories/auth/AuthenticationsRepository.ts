@@ -88,7 +88,7 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
     const payload = await this.tokenManager.decodePayload(data.refreshToken);
 
     // Remove the exp property from the payload
-    const { exp, ...newPayload } = payload;
+    const { exp, iat, ...newPayload } = payload;
 
     const accessToken = await this.tokenManager.createAccessToken(newPayload);
     const newRefreshToken = await this.tokenManager.createRefreshToken(
