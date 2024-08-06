@@ -285,10 +285,14 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   ): Promise<any> {
     try {
       const payload = rawRequest.query;
+      const hasTableParam = payload.table !== undefined;
 
       // Collect sorting conditions
       const order = await this.queryOrders(payload, null);
       const all = await this.findAll(payload, undefined, order);
+      if (hasTableParam) {
+        return await this.rawToTable(rawRequest, all);
+      }
       
       let data;
       const limit = parseInt(payload.limit as string, 10);

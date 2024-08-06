@@ -65,7 +65,7 @@ class UsersRepository extends StandardRepo<Users> {
         created_at: "created_at",
       };
       const searchable = this.delArrByKey(nameToPath, ["id"]);
-      // data = await this.findAll(request.query);
+
       data = await this.queries(request, nameToPath, searchable, true);
     } else {
       data = await this.getList(request);
