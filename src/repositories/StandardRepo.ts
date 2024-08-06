@@ -63,7 +63,8 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     payload?: any,
     additionalConditions?: FindOptionsWhere<T>,
     order?: FindOptionsOrder<T>,
-    searchable?: any
+    searchable?: any,
+    selectedFields?: string[]
   ): Promise<T[]> {
     if (!this.repository) {
       throw new Error("Repository not initialized");
@@ -98,6 +99,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       return await this.repository.find({
         where: whereCondition,
         order: order,
+        select: selectedFields,
       });
     } catch (error) {
       console.error("Error finding all records:", error);
@@ -282,11 +284,28 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     countRelations: any = null
   ): Promise<any> {
     try {
-      const data = await this.findAllWithRelations(rawRequest, relations);
-      if (countRelations) {
-        // Implement countRelations logic here
+      const payload = rawRequest.query;
+
+      // Collect sorting conditions
+      const order = await this.queryOrders(payload, null);
+      const all = await this.findAll(payload, undefined, order);
+      
+      let data;
+      const limit = parseInt(payload.limit as string, 10);
+      if (limit > 0) {
+        const currentPage = 1;
+        const start = (currentPage - 1) * limit;
+        const end = start + limit;
+        data = all.slice(start, end);
+      } else {
+        data = all;
       }
-      return this.rawToTable(rawRequest, data);
+
+      // const data = await this.findAllWithRelations(rawRequest, relations);
+      // if (countRelations) {
+      // Implement countRelations logic here
+      // }
+      return data;
     } catch (error) {
       console.error("Error getting list of records:", error);
       throw new Error("Could not get list of records");
@@ -296,9 +315,10 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   // Converts raw data to a table format
   async rawToTable(
     rawRequest: Request,
-    data: T[]
+    data: any,
+    selectedFields?: string[]
   ): Promise<{
-    data: T[];
+    data: [];
     current_page: number;
     last_page: number;
     first_page_url: string;
@@ -328,29 +348,43 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       const end = start + limit;
       const paginatedData = data.slice(start, end); // Get the data for the current page
 
+      // Filter the paginated data to include only selected fields
+      const filteredData = paginatedData.map((item: any) => {
+        
+        if (Array.isArray(selectedFields) && selectedFields.length > 0) {
+          return selectedFields.reduce((acc, field) => {
+            if (field in item) {
+              acc[field] = item[field];
+            }
+            return acc;
+          }, {} as Record<string, any>);
+        }
+        return item; // Return the item as is if no selectedFields
+      });
+
+      // Extract the full path from the original request URL
+      const originalPath = rawRequest.originalUrl.split("?")[0];
+
+      // Construct the base URL for pagination links
+      const baseUrl = `${rawRequest.protocol}://${rawRequest.get(
+        "host"
+      )}${originalPath}`;
+
       return {
-        data: paginatedData,
+        data: filteredData,
         current_page: currentPage,
         last_page: totalPages,
-        first_page_url: `${rawRequest.protocol}://${rawRequest.get("host")}${
-          rawRequest.baseUrl
-        }?page=1&limit=${limit}`,
-        last_page_url: `${rawRequest.protocol}://${rawRequest.get("host")}${
-          rawRequest.baseUrl
-        }?page=${totalPages}&limit=${limit}`,
+        first_page_url: `${baseUrl}?table&page=1&limit=${limit}`,
+        last_page_url: `${baseUrl}?table&page=${totalPages}&limit=${limit}`,
         links: [], // Implement if you need detailed pagination links
-        path: rawRequest.baseUrl,
+        path: baseUrl,
         prev_page_url:
           currentPage > 1
-            ? `${rawRequest.protocol}://${rawRequest.get("host")}${
-                rawRequest.baseUrl
-              }?page=${currentPage - 1}&limit=${limit}`
+            ? `${baseUrl}?table&page=${currentPage - 1}&limit=${limit}`
             : null,
         next_page_url:
           currentPage < totalPages
-            ? `${rawRequest.protocol}://${rawRequest.get("host")}${
-                rawRequest.baseUrl
-              }?page=${currentPage + 1}&limit=${limit}`
+            ? `${baseUrl}?table&page=${currentPage + 1}&limit=${limit}`
             : null,
         limit: limit,
         from: start + 1,
@@ -372,7 +406,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   ): Promise<
     | T[]
     | {
-        data: T[];
+        data: [];
         current_page: number;
         last_page: number;
         first_page_url: string;
@@ -392,7 +426,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
 
       // Prepare an empty object for FindOptionsWhere
       let whereConditions: FindOptionsWhere<T> = {};
-      const orderConditions: FindOptionsOrder<T> = {};
 
       // Collect where conditions
       whereConditions = await this.queryLikeWhere(
@@ -412,16 +445,22 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       // Collect sorting conditions
       const order = await this.queryOrders(payload, nameToPath);
 
+      // Prepare the selected fields based on nameToPath
+      const selectedFields = Object.keys(nameToPath).map(
+        (key) => nameToPath[key]
+      );
+
       // Fetch the data based on the conditions applied
       const data = await this.findAll(
         payload,
         whereConditions,
         order,
-        searchable
+        searchable,
+        selectedFields
       );
 
       if (withGet) {
-        return await this.rawToTable(rawRequest, data);
+        return await this.rawToTable(rawRequest, data, selectedFields);
       }
 
       return data;
