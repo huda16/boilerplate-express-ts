@@ -70,25 +70,27 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     }
 
     try {
-      // Determine the condition for deleted_at based on the payload
-      const isTrashed = payload?.trash;
-      const deletedAtCondition: FindOperator<any> = isTrashed
-        ? Not(IsNull())
-        : IsNull(); // Use Not(IsNull()) for trashed records
-
       // Create the base where condition
-      const whereCondition: FindOptionsWhere<T> = {
-        deleted_at: deletedAtCondition,
-      } as FindOptionsWhere<T>;
+      const whereCondition: FindOptionsWhere<T> = {};
+
+      // Determine the condition for deleted_at based on payload
+      const isTrashed = payload?.trash;
+      const includeDeleted = payload?.include_deleted;
+
+      if (includeDeleted) {
+        // If include_deleted is true, don't filter on deleted_at
+      } else if (isTrashed) {
+        // If trash is true, filter to only deleted records
+        whereCondition.deleted_at = Not(IsNull()) as any;
+      } else {
+        // Default case: filter out deleted records
+        whereCondition.deleted_at = IsNull() as any;
+      }
 
       // Safely merge additional conditions
       if (additionalConditions) {
         Object.entries(additionalConditions).forEach(([key, value]) => {
-          if (key in whereCondition) {
-            whereCondition[key as keyof T] = value as any; // Type assertion to any
-          } else {
-            whereCondition[key as keyof T] = value; // Direct assignment
-          }
+          whereCondition[key as keyof T] = value as any; // Type assertion to any
         });
       }
 
