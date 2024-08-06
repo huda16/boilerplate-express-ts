@@ -4,7 +4,7 @@ import BcryptPasswordHash from "../../services/security/BcryptPasswordHash";
 import JwtTokenManager from "../../services/security/JwtTokenManager";
 import UsersRepository from "./UsersRepository";
 import AuthenticationError from "../../utils/exceptions/AuthenticationError";
-import ValidationError from "utils/exceptions/ValidationError";
+import ValidationError from "../../utils/exceptions/ValidationError";
 
 class AuthenticationsRepository extends StandardRepo<Authentications> {
   private passwordHash: BcryptPasswordHash;

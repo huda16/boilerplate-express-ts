@@ -8,7 +8,7 @@ import {
 import {
   validateCreateAuth,
   validateUpdateAuth,
-} from "middlewares/validator/auth/authenticationValidation";
+} from "../../middlewares/validator/auth/authenticationValidation";
 import AuthenticationsController from "../../controllers/auth/AuthenticationsController";
 import JwtTokenManager from "../../services/security/JwtTokenManager";
 import upload from "../../middlewares/upload"; // Assuming you have an upload middleware set up
@@ -20,6 +20,7 @@ const jwtTokenManager = new JwtTokenManager();
 // User routes
 router.post(
   "/users",
+  jwtTokenManager.authenticateJWT,
   validateCreateUser,
   handleValidationErrors,
   UsersController.createUser
@@ -32,11 +33,21 @@ router.get(
 router.get("/users/:id", UsersController.getUserById);
 router.put(
   "/users/:id",
+  jwtTokenManager.authenticateJWT,
   validateUpdateUser,
   handleValidationErrors,
   UsersController.updateUser
 );
-router.delete("/users/:id", UsersController.deleteUser);
+router.delete(
+  "/users/:id",
+  jwtTokenManager.authenticateJWT,
+  UsersController.deleteUser
+);
+router.put(
+  "/users/:id/restore",
+  jwtTokenManager.authenticateJWT,
+  UsersController.restoreUser
+);
 
 // Auth routes
 router.post(

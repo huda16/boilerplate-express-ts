@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import InvariantError from "../../utils/exceptions/InvariantError";
+import AuthenticationError from "../../utils/exceptions/AuthenticationError";
+import AuthorizationError from "../../utils/exceptions/AuthorizationError";
 import AuthenticationTokenManager from "../../utils/security/AuthenticationTokenManager";
-import AuthenticationError from "utils/exceptions/AuthenticationError";
-import AuthorizationError from "utils/exceptions/AuthorizationError";
 
 class JwtTokenManager extends AuthenticationTokenManager {
   async createAccessToken(payload: object): Promise<string> {
@@ -30,7 +30,6 @@ class JwtTokenManager extends AuthenticationTokenManager {
 
       jwt.verify(token, process.env.REFRESH_TOKEN_KEY as string);
     } catch (error) {
-      console.error("Error verifying refresh token:", error);
       if (error instanceof jwt.JsonWebTokenError) {
         throw new InvariantError("Refresh token invalid");
       }
@@ -49,16 +48,21 @@ class JwtTokenManager extends AuthenticationTokenManager {
   authenticateJWT(req: Request, res: Response, next: NextFunction) {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      throw new AuthenticationError("Unauthorized");
+      next(new AuthenticationError("Unauthorized"));
+      return;
     }
-    jwt.verify(token, process.env.ACCESS_TOKEN_KEY as string, (err) => {
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_KEY as string, (err, user) => {
       if (err) {
-        throw new AuthorizationError("You don't have permissions")
+        next(new AuthenticationError("Unauthorized, Your access token was expired"));
+        return;
       }
+
+      // Attach user info to request object
+      req.auth = user;
       next();
     });
   }
 }
 
 export default JwtTokenManager;
-

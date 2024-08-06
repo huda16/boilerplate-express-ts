@@ -1,3 +1,4 @@
+import { Request } from "express";
 import { Users } from "../../entities/auth/Users";
 import StandardRepo from "../StandardRepo";
 import bcrypt from "bcrypt";
@@ -5,6 +6,67 @@ import bcrypt from "bcrypt";
 class UsersRepository extends StandardRepo<Users> {
   constructor() {
     super(Users);
+  }
+
+  // Get Index
+  async getIndex(
+    request: Request
+  ): Promise<
+    | Users[]
+    | {
+        data: Users[];
+        totalItems: number;
+        totalPages: number;
+        currentPage: number;
+      }
+  > {
+    let data:
+      | Users[]
+      | {
+          data: Users[];
+          totalItems: number;
+          totalPages: number;
+          currentPage: number;
+        } = [];
+
+    // Check if the request has the 'table' query parameter
+    const hasTableParam = request.query.table !== undefined;
+
+    if (hasTableParam) {
+      const nameToPath = {
+        id: "id",
+        name: "name",
+        username: "username",
+        email: "email",
+        picture: "picture",
+        role_name: "role_name",
+        master_menu: "master_menu",
+        activated_at: "activated_at",
+        birth_place: "birth_place",
+        birth_date: "birth_date",
+        religion: "religion",
+        created_by: "created_by",
+      };
+      const searchable = this.delArrByKey(nameToPath, ["id"]);
+      // data = await this.findAll(request.query);
+      data = await this.queries(request, nameToPath, searchable, true);
+    } else {
+      data = await this.getList(request);
+    }
+
+    return data;
+  }
+
+  // Remove keys from an object
+  private delArrByKey(
+    obj: { [key: string]: string },
+    keysToRemove: string[]
+  ): { [key: string]: string } {
+    const newObj = { ...obj };
+    for (const key of keysToRemove) {
+      delete newObj[key];
+    }
+    return newObj;
   }
 
   // Create a new user with hashed password

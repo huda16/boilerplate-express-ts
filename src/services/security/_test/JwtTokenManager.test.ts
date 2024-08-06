@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import JwtTokenManager from "../JwtTokenManager"; // Adjust the import path as needed
+import JwtTokenManager from "../JwtTokenManager";
 import InvariantError from "../../../utils/exceptions/InvariantError";
+import AuthenticationError from "../../../utils/exceptions/AuthenticationError";
 
 describe("JwtTokenManager", () => {
   let jwtTokenManager: JwtTokenManager;
@@ -18,7 +19,6 @@ describe("JwtTokenManager", () => {
       const token = await jwtTokenManager.createAccessToken(payload);
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY as string);
 
-      // Check if the relevant properties match
       expect(decoded).toHaveProperty("userId", payload.userId);
       expect(decoded).toHaveProperty("iat"); // Check for the iat property
       expect(decoded).toHaveProperty("exp"); // Check for the exp property
@@ -34,13 +34,11 @@ describe("JwtTokenManager", () => {
         process.env.REFRESH_TOKEN_KEY as string
       );
 
-      // Check if the relevant properties match
       expect(decoded).toHaveProperty("userId", payload.userId);
       expect(decoded).toHaveProperty("iat"); // Check for the iat property
       expect(decoded).toHaveProperty("exp"); // Check for the exp property
     });
   });
-
 
   describe("verifyRefreshToken", () => {
     it("should not throw an error for a valid refresh token", async () => {
@@ -64,7 +62,6 @@ describe("JwtTokenManager", () => {
       const token = await jwtTokenManager.createAccessToken(payload);
       const decoded = await jwtTokenManager.decodePayload(token);
 
-      // Check if the relevant properties match
       expect(decoded).toHaveProperty("userId", payload.userId);
       expect(decoded).toHaveProperty("iat"); // Check for the iat property
       expect(decoded).toHaveProperty("exp"); // Check for the exp property
@@ -77,7 +74,6 @@ describe("JwtTokenManager", () => {
     });
   });
 
-
   describe("authenticateJWT", () => {
     it("should call next() for a valid access token", () => {
       const payload = { userId: "123" };
@@ -85,32 +81,31 @@ describe("JwtTokenManager", () => {
       const req = { headers: { authorization: `Bearer ${token}` } } as Request;
       const next = jest.fn() as NextFunction;
 
-      // Create a complete mock of Response
       const res = {
         sendStatus: jest.fn(),
-        status: jest.fn().mockReturnThis(), // To chain status and send methods
-        json: jest.fn().mockReturnThis(), // To chain json and send methods
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       jwtTokenManager.authenticateJWT(req, res, next);
-      expect(next).toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(); // Ensure next() is called without arguments
     });
 
-    it("should send 401 for missing token", () => {
+    it("should throw an AuthenticationError for missing token", () => {
       const req = { headers: {} } as Request;
       const next = jest.fn() as NextFunction;
 
       const res = {
         sendStatus: jest.fn(),
-        status: jest.fn().mockReturnThis(), // To chain status and send methods
-        json: jest.fn().mockReturnThis(), // To chain json and send methods
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       jwtTokenManager.authenticateJWT(req, res, next);
-      expect(res.sendStatus).toHaveBeenCalledWith(401);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError)); // Expect an AuthenticationError
     });
 
-    it("should send 403 for invalid token", () => {
+    it("should throw an AuthenticationError for invalid token", () => {
       const req = {
         headers: { authorization: "Bearer invalidToken" },
       } as Request;
@@ -118,12 +113,12 @@ describe("JwtTokenManager", () => {
 
       const res = {
         sendStatus: jest.fn(),
-        status: jest.fn().mockReturnThis(), // To chain status and send methods
-        json: jest.fn().mockReturnThis(), // To chain json and send methods
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       jwtTokenManager.authenticateJWT(req, res, next);
-      expect(res.sendStatus).toHaveBeenCalledWith(403);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError)); // Expect an AuthenticationError
     });
   });
 });
