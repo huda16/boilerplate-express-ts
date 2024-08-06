@@ -11,12 +11,7 @@ dotenv.config();
 const app = express();
 
 // USE HELMET AND CORS MIDDLEWARES
-app.use(
-  cors({
-    origin: ["*"], // Comma separated list of your urls to access your api. * means allow everything
-    credentials: true, // Allow cookies to be sent with requests
-  })
-);
+app.use(cors());
 
 app.use(helmet());
 app.use(express.json());
