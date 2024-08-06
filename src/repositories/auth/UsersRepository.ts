@@ -9,24 +9,40 @@ class UsersRepository extends StandardRepo<Users> {
   }
 
   // Get Index
-  async getIndex(
-    request: Request
-  ): Promise<
+  async getIndex(request: Request): Promise<
     | Users[]
     | {
         data: Users[];
-        totalItems: number;
-        totalPages: number;
-        currentPage: number;
+        current_page: number;
+        last_page: number;
+        first_page_url: string;
+        last_page_url: string;
+        links: [];
+        path: string;
+        prev_page_url: string | null;
+        next_page_url: string | null;
+        limit: number; // limit
+        from: number;
+        to: number;
+        total: number;
       }
   > {
     let data:
       | Users[]
       | {
           data: Users[];
-          totalItems: number;
-          totalPages: number;
-          currentPage: number;
+          current_page: number;
+          last_page: number;
+          first_page_url: string;
+          last_page_url: string;
+          links: [];
+          path: string;
+          prev_page_url: string | null;
+          next_page_url: string | null;
+          limit: number; // limit
+          from: number;
+          to: number;
+          total: number;
         } = [];
 
     // Check if the request has the 'table' query parameter

@@ -299,67 +299,64 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     data: T[]
   ): Promise<{
     data: T[];
-    totalItems: number;
-    totalPages: number;
-    currentPage: number;
+    current_page: number;
+    last_page: number;
+    first_page_url: string;
+    last_page_url: string;
+    links: [];
+    path: string;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    limit: number;
+    from: number;
+    to: number;
+    total: number;
   }> {
     try {
       const payload: ParsedQs = rawRequest.query; // Use ParsedQs type for query
-      let limit = parseInt(process.env.PAGINATION_LIMIT || "10", 10);
-      let currentPage = 1;
+      const limit = parseInt(payload.limit as string, 10);
+      let currentPage = parseInt(payload.page as string) || 1;
 
-      if (
-        payload.limit &&
-        typeof payload.limit === "string" &&
-        payload.limit !== "0"
-      ) {
-        limit = parseInt(payload.limit, 10);
-      }
+      const total = data.length; // Total items in the dataset
+      const totalPages = Math.ceil(total / limit); // Total pages available
 
-      if (payload.page && typeof payload.page === "string") {
-        currentPage = parseInt(payload.page, 10);
-      }
+      // Ensure currentPage is within bounds
+      if (currentPage < 1) currentPage = 1;
+      if (currentPage > totalPages) currentPage = totalPages;
 
-      if (payload.table) {
-        // Implement pagination logic here
-        return this.paginate(data, currentPage, limit);
-      } else {
-        if (
-          payload.limit &&
-          typeof payload.limit === "string" &&
-          payload.limit === "0"
-        ) {
-          return {
-            data,
-            totalItems: data.length,
-            totalPages: 1,
-            currentPage: 1,
-          };
-        } else if (
-          payload.skip &&
-          typeof payload.skip === "string" &&
-          payload.take &&
-          typeof payload.take === "string"
-        ) {
-          const skip = parseInt(payload.skip, 10);
-          const take = parseInt(payload.take, 10);
-          const paginatedData = data.slice(skip, skip + take);
-          return {
-            data: paginatedData,
-            totalItems: data.length,
-            totalPages: Math.ceil(data.length / take),
-            currentPage: Math.floor(skip / take) + 1,
-          };
-        } else {
-          const paginatedData = data.slice(0, limit);
-          return {
-            data: paginatedData,
-            totalItems: data.length,
-            totalPages: Math.ceil(data.length / limit),
-            currentPage: 1,
-          };
-        }
-      }
+      const start = (currentPage - 1) * limit;
+      const end = start + limit;
+      const paginatedData = data.slice(start, end); // Get the data for the current page
+
+      return {
+        data: paginatedData,
+        current_page: currentPage,
+        last_page: totalPages,
+        first_page_url: `${rawRequest.protocol}://${rawRequest.get("host")}${
+          rawRequest.baseUrl
+        }?page=1&limit=${limit}`,
+        last_page_url: `${rawRequest.protocol}://${rawRequest.get("host")}${
+          rawRequest.baseUrl
+        }?page=${totalPages}&limit=${limit}`,
+        links: [], // Implement if you need detailed pagination links
+        path: rawRequest.baseUrl,
+        prev_page_url:
+          currentPage > 1
+            ? `${rawRequest.protocol}://${rawRequest.get("host")}${
+                rawRequest.baseUrl
+              }?page=${currentPage - 1}&limit=${limit}`
+            : null,
+        next_page_url:
+          currentPage < totalPages
+            ? `${rawRequest.protocol}://${rawRequest.get("host")}${
+                rawRequest.baseUrl
+              }?page=${currentPage + 1}&limit=${limit}`
+            : null,
+        limit: limit,
+        from: start + 1,
+        to: end > total ? total : end,
+        total: total,
+      };
     } catch (error) {
       console.error("Error converting raw data to table:", error);
       throw new Error("Could not convert raw data to table");
@@ -374,7 +371,21 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     withGet: boolean = false
   ): Promise<
     | T[]
-    | { data: T[]; totalItems: number; totalPages: number; currentPage: number }
+    | {
+        data: T[];
+        current_page: number;
+        last_page: number;
+        first_page_url: string;
+        last_page_url: string;
+        links: [];
+        path: string;
+        prev_page_url: string | null;
+        next_page_url: string | null;
+        limit: number; // limit
+        from: number;
+        to: number;
+        total: number;
+      }
   > {
     try {
       const payload = rawRequest.query;
@@ -408,9 +419,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
         order,
         searchable
       );
-
-      // Fetch the data based on the conditions applied
-      // const data = await this.findAll(payload, whereConditions, searchable);
 
       if (withGet) {
         return await this.rawToTable(rawRequest, data);
@@ -531,7 +539,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   }
 
   // Handles quick search conditions
-  // Handles quick search conditions
   async queryQuickSearch(
     payload: any,
     searchable: { [key: string]: any } | null
@@ -614,36 +621,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   }
 
   // Additional helper functions
-  // Implement the paginate method
-  paginate(
-    data: T[],
-    currentPage: number,
-    limit: number
-  ): {
-    data: T[];
-    totalItems: number;
-    totalPages: number;
-    currentPage: number;
-  } {
-    const totalItems = data.length;
-    const totalPages = Math.ceil(totalItems / limit);
-
-    // Ensure currentPage is within bounds
-    if (currentPage < 1) currentPage = 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-
-    const start = (currentPage - 1) * limit;
-    const end = start + limit;
-    const paginatedData = data.slice(start, end);
-
-    return {
-      data: paginatedData,
-      totalItems,
-      totalPages,
-      currentPage,
-    };
-  }
-
   // Helper function to finding all with relations
   private async findAllWithRelations(
     rawRequest: any,
