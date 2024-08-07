@@ -26,7 +26,7 @@ class UploadsController {
 
     try {
       const filename = await storageService.writeFile(multerRequest.file);
-      return sendSuccessResponse(res, filename, 200);
+      return sendSuccessResponse({ res, data: filename, statusCode: 200 });
     } catch (error) {
       console.error("Error upload file:", error);
       next(error);

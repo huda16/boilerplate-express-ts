@@ -7,8 +7,14 @@ class AuthenticationsController {
   // Create a new auth
   async createAuthentication(req: Request, res: Response, next: NextFunction) {
     try {
-      const authentication = await AuthenticationsRepository.createToken(req.body);
-      return sendSuccessResponse(res, authentication, 201);
+      const authentication = await AuthenticationsRepository.createToken(
+        req.body
+      );
+      return sendSuccessResponse({
+        res,
+        data: authentication,
+        statusCode: 201,
+      });
     } catch (error) {
       console.error("Error creating authentication:", error);
       next(error);
@@ -20,9 +26,13 @@ class AuthenticationsController {
     try {
       const authentication = await AuthenticationsRepository.refresh(req.body);
       if (!authentication) {
-        return next(new NotFoundError("Authentication not found")); 
+        return next(new NotFoundError("Authentication not found"));
       }
-      return sendSuccessResponse(res, authentication, 200);
+      return sendSuccessResponse({
+        res,
+        data: authentication,
+        statusCode: 200,
+      });
     } catch (error) {
       console.error("Error updating authentication:", error);
       next(error);
@@ -34,7 +44,11 @@ class AuthenticationsController {
     try {
       await AuthenticationsRepository.deleteToken(req.body);
 
-      return sendSuccessResponse(res, "Authentication successfully deleted", 200);
+      return sendSuccessResponse({
+        res,
+        data: "Authentication successfully deleted",
+        statusCode: 200,
+      });
     } catch (error) {
       console.error("Error deleting user:", error);
       next(error);

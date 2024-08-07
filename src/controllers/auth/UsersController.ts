@@ -10,7 +10,7 @@ class UsersController {
       req.body.created_by = req.auth?.username;
       req.body.created_at = new Date();
       const user = await UsersRepository.create(req.body);
-      return sendSuccessResponse(res, user, 201);
+      return sendSuccessResponse({ res, data: user, statusCode: 201 });
     } catch (error) {
       console.error("Error creating user:", error);
       next(error);
@@ -20,8 +20,13 @@ class UsersController {
   // Get all users
   async getAllUsers(req: Request, res: Response, next: NextFunction) {
     try {
-      const users = await UsersRepository.getIndex(req);
-      return sendSuccessResponse(res, users, 200);
+      const { data, meta } = await UsersRepository.getIndex(req);
+      return sendSuccessResponse({
+        res,
+        data,
+        meta,
+        statusCode: 200,
+      });
     } catch (error) {
       console.error("Error retrieving users:", error);
       next(error);
@@ -34,9 +39,9 @@ class UsersController {
     try {
       const user = await UsersRepository.findById(Number(id));
       if (!user) {
-        return next(new NotFoundError("User not found")); 
+        return next(new NotFoundError("User not found"));
       }
-      return sendSuccessResponse(res, user, 200);
+      return sendSuccessResponse({ res, data: user, statusCode: 200 });
     } catch (error) {
       console.error("Error retrieving user:", error);
       next(error);
@@ -52,9 +57,9 @@ class UsersController {
       req.body.updated_at = new Date();
       const updatedUser = await UsersRepository.update(Number(id), req.body);
       if (!updatedUser) {
-        return next(new NotFoundError("User not found")); 
+        return next(new NotFoundError("User not found"));
       }
-      return sendSuccessResponse(res, updatedUser, 200);
+      return sendSuccessResponse({ res, data: updatedUser, statusCode: 200 });
     } catch (error) {
       console.error("Error updating user:", error);
       next(error);
@@ -67,11 +72,19 @@ class UsersController {
     const permanent = req.query.permanent === "true";
 
     try {
-      const deleted = await UsersRepository.delete(Number(id), permanent, req.auth?.username);
+      const deleted = await UsersRepository.delete(
+        Number(id),
+        permanent,
+        req.auth?.username
+      );
       if (!deleted) {
-        return next(new NotFoundError("User not found")); 
+        return next(new NotFoundError("User not found"));
       }
-      return sendSuccessResponse(res, `User with ID ${id} successfully deleted`, 200);
+      return sendSuccessResponse({
+        res,
+        data: `User with ID ${id} successfully deleted`,
+        statusCode: 200,
+      });
     } catch (error) {
       console.error("Error deleting user:", error);
       next(error);
@@ -85,9 +98,13 @@ class UsersController {
     try {
       const restored = await UsersRepository.restore(Number(id));
       if (!restored) {
-        return next(new NotFoundError("User not found")); 
+        return next(new NotFoundError("User not found"));
       }
-      return sendSuccessResponse(res, `User with ID ${id} successfully restored`, 200);
+      return sendSuccessResponse({
+        res,
+        data: `User with ID ${id} successfully restored`,
+        statusCode: 200,
+      });
     } catch (error) {
       console.error("Error deleting user:", error);
       next(error);

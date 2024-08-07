@@ -9,41 +9,16 @@ class UsersRepository extends StandardRepo<Users> {
   }
 
   // Get Index
-  async getIndex(request: Request): Promise<
-    | Users[]
-    | {
-        data: Users[];
-        current_page: number;
-        last_page: number;
-        first_page_url: string;
-        last_page_url: string;
-        links: [];
-        path: string;
-        prev_page_url: string | null;
-        next_page_url: string | null;
-        limit: number; // limit
-        from: number;
-        to: number;
-        total: number;
-      }
-  > {
-    let data:
-      | Users[]
-      | {
-          data: Users[];
-          current_page: number;
-          last_page: number;
-          first_page_url: string;
-          last_page_url: string;
-          links: [];
-          path: string;
-          prev_page_url: string | null;
-          next_page_url: string | null;
-          limit: number; // limit
-          from: number;
-          to: number;
-          total: number;
-        } = [];
+  async getIndex(request: Request): Promise<{
+    data: Users[];
+    meta?: Meta;
+  }> {
+    let data: {
+      data: Users[];
+      meta?: Meta;
+    } = {
+      data: [],
+    };
 
     // Check if the request has the 'table' query parameter
     const hasTableParam = request.query.table !== undefined;

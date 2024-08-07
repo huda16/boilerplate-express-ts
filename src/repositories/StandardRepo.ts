@@ -282,7 +282,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     rawRequest: any,
     relations: any = null,
     countRelations: any = null
-  ): Promise<any> {
+  ): Promise<{ data: T[] }> {
     try {
       const payload = rawRequest.query;
       const hasTableParam = payload.table !== undefined;
@@ -293,7 +293,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       if (hasTableParam) {
         return await this.rawToTable(rawRequest, all);
       }
-      
+
       let data;
       const limit = parseInt(payload.limit as string, 10);
       if (limit > 0) {
@@ -309,7 +309,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       // if (countRelations) {
       // Implement countRelations logic here
       // }
-      return data;
+      return { data };
     } catch (error) {
       console.error("Error getting list of records:", error);
       throw new Error("Could not get list of records");
@@ -323,18 +323,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     selectedFields?: string[]
   ): Promise<{
     data: [];
-    current_page: number;
-    last_page: number;
-    first_page_url: string;
-    last_page_url: string;
-    links: [];
-    path: string;
-    prev_page_url: string | null;
-    next_page_url: string | null;
-    limit: number;
-    from: number;
-    to: number;
-    total: number;
+    meta?: Meta;
   }> {
     try {
       const payload: ParsedQs = rawRequest.query; // Use ParsedQs type for query
@@ -354,7 +343,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
 
       // Filter the paginated data to include only selected fields
       const filteredData = paginatedData.map((item: any) => {
-        
         if (Array.isArray(selectedFields) && selectedFields.length > 0) {
           return selectedFields.reduce((acc, field) => {
             if (field in item) {
@@ -376,24 +364,26 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
 
       return {
         data: filteredData,
-        current_page: currentPage,
-        last_page: totalPages,
-        first_page_url: `${baseUrl}?table&page=1&limit=${limit}`,
-        last_page_url: `${baseUrl}?table&page=${totalPages}&limit=${limit}`,
-        links: [], // Implement if you need detailed pagination links
-        path: baseUrl,
-        prev_page_url:
-          currentPage > 1
-            ? `${baseUrl}?table&page=${currentPage - 1}&limit=${limit}`
-            : null,
-        next_page_url:
-          currentPage < totalPages
-            ? `${baseUrl}?table&page=${currentPage + 1}&limit=${limit}`
-            : null,
-        limit: limit,
-        from: start + 1,
-        to: end > total ? total : end,
-        total: total,
+        meta: {
+          current_page: currentPage,
+          last_page: totalPages,
+          first_page_url: `${baseUrl}?table&page=1&limit=${limit}`,
+          last_page_url: `${baseUrl}?table&page=${totalPages}&limit=${limit}`,
+          links: [], // Implement if you need detailed pagination links
+          path: baseUrl,
+          prev_page_url:
+            currentPage > 1
+              ? `${baseUrl}?table&page=${currentPage - 1}&limit=${limit}`
+              : null,
+          next_page_url:
+            currentPage < totalPages
+              ? `${baseUrl}?table&page=${currentPage + 1}&limit=${limit}`
+              : null,
+          limit: limit,
+          from: start + 1,
+          to: end > total ? total : end,
+          total: total,
+        },
       };
     } catch (error) {
       console.error("Error converting raw data to table:", error);
@@ -407,24 +397,10 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     nameToPath: any = null,
     searchable: any = null,
     withGet: boolean = false
-  ): Promise<
-    | T[]
-    | {
-        data: [];
-        current_page: number;
-        last_page: number;
-        first_page_url: string;
-        last_page_url: string;
-        links: [];
-        path: string;
-        prev_page_url: string | null;
-        next_page_url: string | null;
-        limit: number; // limit
-        from: number;
-        to: number;
-        total: number;
-      }
-  > {
+  ): Promise<{
+    data: T[];
+    meta?: Meta;
+  }> {
     try {
       const payload = rawRequest.query;
 
@@ -467,7 +443,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
         return await this.rawToTable(rawRequest, data, selectedFields);
       }
 
-      return data;
+      return { data };
     } catch (error) {
       console.error("Error performing queries:", error);
       throw new Error("Could not perform queries");
