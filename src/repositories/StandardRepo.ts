@@ -75,8 +75,8 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       const whereCondition: FindOptionsWhere<T> = {};
 
       // Determine the condition for deleted_at based on payload
-      const isTrashed = payload?.trash;
-      const includeDeleted = payload?.include_deleted;
+      const isTrashed = payload?.trash === "true";
+      const includeDeleted = payload?.include_deleted === "true";
 
       if (includeDeleted) {
         // If include_deleted is true, don't filter on deleted_at
