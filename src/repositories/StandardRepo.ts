@@ -286,23 +286,41 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     try {
       const payload = rawRequest.query;
       const hasTableParam = payload.table !== undefined;
-
+      const selectedFields = JSON.parse(payload.select);
       // Collect sorting conditions
       const order = await this.queryOrders(payload, null);
-      const all = await this.findAll(payload, undefined, order);
       if (hasTableParam) {
-        return await this.rawToTable(rawRequest, all);
+        const data = await this.findAll(payload, undefined, order);
+        return await this.rawToTable(rawRequest, data);
       }
 
+      const all = await this.findAll(
+        payload,
+        undefined,
+        order,
+        undefined,
+        selectedFields
+      );
       let data;
+      const filteredData = all.map((item: any) => {
+        if (Array.isArray(selectedFields) && selectedFields.length > 0) {
+          return selectedFields.reduce((acc, field) => {
+            if (field in item) {
+              acc[field] = item[field];
+            }
+            return acc;
+          }, {} as Record<string, any>);
+        }
+        return item; // Return the item as is if no selectedFields
+      });
       const limit = parseInt(payload.limit as string, 10);
       if (limit > 0) {
         const currentPage = 1;
         const start = (currentPage - 1) * limit;
         const end = start + limit;
-        data = all.slice(start, end);
+        data = filteredData.slice(start, end);
       } else {
-        data = all;
+        data = filteredData;
       }
 
       // const data = await this.findAllWithRelations(rawRequest, relations);
