@@ -19,7 +19,7 @@ export function extractParamsAttribute(params: string): KeyValuePair[] {
 
     // Check if parsedParams is an array
     if (!Array.isArray(parsedParams)) {
-      throw new ValidationError("Invalid format: expected an array");
+      throw new ValidationError("Invalid format query params: expected an array");
     }
 
     // Map the parsed array to key-value objects
@@ -34,7 +34,7 @@ export function extractParamsAttribute(params: string): KeyValuePair[] {
     });
   } catch (error) {
     console.error("Error parsing params attribute:", error);
-    return [];
+    throw new ValidationError(`Error parsing params attribute: ${error}`);
   }
 }
 
