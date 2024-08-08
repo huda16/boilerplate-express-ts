@@ -38,6 +38,7 @@ class UsersRepository extends StandardRepo<Users> {
         religion: "religion",
         created_by: "created_by",
         created_at: "created_at",
+        updated_at: "updated_at",
       };
       const searchable = this.delArrByKey(nameToPath, ["id"]);
 
