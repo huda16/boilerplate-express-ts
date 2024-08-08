@@ -13,6 +13,8 @@ import {
   FindManyOptions,
   FindOptionsOrder,
   FindOptionsOrderProperty,
+  Brackets,
+  ConnectionClosedEvent,
 } from "typeorm";
 import { OracleDataSource } from "../services/database/oracle/dataSource";
 import { Request } from "express";
@@ -35,12 +37,13 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   protected repository?: Repository<T>;
 
   constructor(entity: EntityTarget<T>) {
-    this.initializeRepository(entity);
-  }
-
-  private async initializeRepository(entity: EntityTarget<T>) {
-    const connection = await OracleDataSource.initialize();
-    this.repository = connection.getRepository(entity);
+    OracleDataSource.initialize()
+      .then((connection) => {
+        this.repository = connection.getRepository(entity);
+      })
+      .catch((error) => {
+        console.error("Error initializing repository:", error);
+      });
   }
 
   // Count total records, excluding soft-deleted ones
@@ -65,7 +68,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     order?: FindOptionsOrder<T>,
     searchable?: any,
     selectedFields?: string[]
-  ): Promise<T[]> {
+  ): Promise<[T[], number]> {
     if (!this.repository) {
       throw new Error("Repository not initialized");
     }
@@ -78,29 +81,81 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       const isTrashed = payload?.trash === "true";
       const includeDeleted = payload?.include_deleted === "true";
 
-      if (includeDeleted) {
-        // If include_deleted is true, don't filter on deleted_at
-      } else if (isTrashed) {
-        // If trash is true, filter to only deleted records
-        whereCondition.deleted_at = Not(IsNull()) as any;
-      } else {
-        // Default case: filter out deleted records
-        whereCondition.deleted_at = IsNull() as any;
+      if (!includeDeleted) {
+        if (isTrashed) {
+          whereCondition.deleted_at = Not(IsNull()) as any;
+        } else {
+          whereCondition.deleted_at = IsNull() as any;
+        }
       }
 
       // Safely merge additional conditions
       if (additionalConditions) {
-        Object.entries(additionalConditions).forEach(([key, value]) => {
-          whereCondition[key as keyof T] = value as any; // Type assertion to any
-        });
+        Object.assign(whereCondition, additionalConditions);
       }
 
       // Return the data with the provided order
-      return await this.repository.find({
-        where: whereCondition,
-        order: order,
-        select: selectedFields,
-      });
+      const queryBuilder = this.repository.createQueryBuilder("entity");
+
+      // Apply where conditions
+      if (Object.keys(whereCondition).length > 0) {
+        queryBuilder.where(whereCondition);
+      }
+
+      // Apply quick search conditions
+      if (payload?.search && searchable) {
+        const searchConditions = Object.keys(searchable).map((key, index) => {
+          const column = searchable[key];
+          return `entity.${column} LIKE :search${index}`;
+        });
+
+        if (searchConditions.length > 0) {
+          queryBuilder.andWhere(
+            new Brackets((qb) => {
+              searchConditions.forEach((condition, index) => {
+                qb.orWhere(condition, {
+                  [`search${index}`]: `%${payload.search}%`,
+                });
+              });
+            })
+          );
+        }
+      }
+
+      // Apply order conditions
+      if (order) {
+        for (const [column, direction] of Object.entries(order)) {
+          queryBuilder.addOrderBy(
+            `entity.${column}`,
+            direction as "ASC" | "DESC"
+          );
+        }
+      }
+
+      // Apply selected fields
+      if (selectedFields?.length) {
+        queryBuilder.select(selectedFields.map((field) => `entity.${field}`));
+      }
+
+      // Apply limit
+      const limit = parseInt(payload.limit as string, 10);
+      if (limit > 0) {
+        queryBuilder.limit(limit);
+      }
+
+      // Apply pagination
+      const currentPage = parseInt(payload?.page as string, 10) || 1;
+
+      // Fetch total count of records for pagination
+      const totalRecords = await queryBuilder.getCount();
+      const totalPages = Math.ceil(totalRecords / limit);
+
+      // Ensure page is within bounds
+      const boundedPage = Math.max(1, Math.min(currentPage, totalPages));
+      const offset = (boundedPage - 1) * limit;
+      queryBuilder.offset(offset);
+
+      return await queryBuilder.getManyAndCount();
     } catch (error) {
       console.error("Error finding all records:", error);
       throw new Error("Could not retrieve records");
@@ -206,6 +261,34 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     }
   }
 
+  async findOneBuilder(
+    payload?: any,
+    selectedFields?: string[]
+  ): Promise<T | null> {
+    if (!this.repository) {
+      throw new Error("Repository not initialized");
+    }
+    try {
+      // Create the base where condition
+      const whereCondition: FindOptionsWhere<T> = {};
+      const queryBuilder = this.repository.createQueryBuilder("entity");
+      if (whereCondition) {
+        queryBuilder.where(whereCondition);
+      }
+
+      if (selectedFields?.length) {
+        queryBuilder
+          .select(selectedFields.map((field) => `entity.${field}`))
+          .addSelect(selectedFields.map((field) => `entity.${field}`));
+      }
+
+      return await queryBuilder.getOne();
+    } catch (error) {
+      console.error("Error finding records by criteria:", error);
+      throw new Error("Could not find records by criteria");
+    }
+  }
+
   // Find a record by specified criteria, excluding soft-deleted ones
   async findOneBy(criteria: any): Promise<T | null> {
     if (!this.repository) {
@@ -286,42 +369,24 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     try {
       const payload = rawRequest.query;
       const hasTableParam = payload.table !== undefined;
-      const selectedFields = JSON.parse(payload.select);
+      let selectedFields: [] = [];
+      if (payload.select) {
+        selectedFields = JSON.parse(payload.select);
+      }
       // Collect sorting conditions
       const order = await this.queryOrders(payload, null);
       if (hasTableParam) {
-        const data = await this.findAll(payload, undefined, order);
-        return await this.rawToTable(rawRequest, data);
+        const [data, rowCount] = await this.findAll(payload, undefined, order);
+        return await this.rawToTable(rawRequest, data, rowCount);
       }
 
-      const all = await this.findAll(
+      const [data, rowCount] = await this.findAll(
         payload,
         undefined,
         order,
         undefined,
         selectedFields
       );
-      let data;
-      const filteredData = all.map((item: any) => {
-        if (Array.isArray(selectedFields) && selectedFields.length > 0) {
-          return selectedFields.reduce((acc, field) => {
-            if (field in item) {
-              acc[field] = item[field];
-            }
-            return acc;
-          }, {} as Record<string, any>);
-        }
-        return item; // Return the item as is if no selectedFields
-      });
-      const limit = parseInt(payload.limit as string, 10);
-      if (limit > 0) {
-        const currentPage = 1;
-        const start = (currentPage - 1) * limit;
-        const end = start + limit;
-        data = filteredData.slice(start, end);
-      } else {
-        data = filteredData;
-      }
 
       // const data = await this.findAllWithRelations(rawRequest, relations);
       // if (countRelations) {
@@ -338,6 +403,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
   async rawToTable(
     rawRequest: Request,
     data: any,
+    total: number,
     selectedFields?: string[]
   ): Promise<{
     data: [];
@@ -348,7 +414,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       const limit = parseInt(payload.limit as string, 10);
       let currentPage = parseInt(payload.page as string) || 1;
 
-      const total = data.length; // Total items in the dataset
       const totalPages = Math.ceil(total / limit); // Total pages available
 
       // Ensure currentPage is within bounds
@@ -357,20 +422,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
 
       const start = (currentPage - 1) * limit;
       const end = start + limit;
-      const paginatedData = data.slice(start, end); // Get the data for the current page
-
-      // Filter the paginated data to include only selected fields
-      const filteredData = paginatedData.map((item: any) => {
-        if (Array.isArray(selectedFields) && selectedFields.length > 0) {
-          return selectedFields.reduce((acc, field) => {
-            if (field in item) {
-              acc[field] = item[field];
-            }
-            return acc;
-          }, {} as Record<string, any>);
-        }
-        return item; // Return the item as is if no selectedFields
-      });
 
       // Extract the full path from the original request URL
       const originalPath = rawRequest.originalUrl.split("?")[0];
@@ -381,7 +432,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       )}${originalPath}`;
 
       return {
-        data: filteredData,
+        data: data,
         meta: {
           current_page: currentPage,
           last_page: totalPages,
@@ -449,7 +500,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       );
 
       // Fetch the data based on the conditions applied
-      const data = await this.findAll(
+      const [data, rowCount] = await this.findAll(
         payload,
         whereConditions,
         order,
@@ -458,7 +509,12 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       );
 
       if (withGet) {
-        return await this.rawToTable(rawRequest, data, selectedFields);
+        return await this.rawToTable(
+          rawRequest,
+          data,
+          rowCount,
+          selectedFields
+        );
       }
 
       return { data };
@@ -573,37 +629,6 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
       console.error("Error performing queryInBetween:", error);
       throw new Error("Could not perform queryInBetween");
     }
-  }
-
-  // Handles quick search conditions
-  async queryQuickSearch(
-    payload: any,
-    searchable: { [key: string]: any } | null
-  ): Promise<T[]> {
-    if (!this.repository) {
-      throw new Error("Repository not initialized");
-    }
-
-    const quicksearch: string = payload.search || "";
-
-    if (!quicksearch || !searchable) return []; // Early return if no search term or searchable fields
-
-    const queryBuilder = this.repository.createQueryBuilder("users"); // Replace 'entity' with your actual entity name
-
-    // Add the deleted_at condition
-    queryBuilder.where("users.deleted_at IS NULL"); // Adjust if you want to handle trashed items
-
-    // Create parameters for each searchable field
-    const select: string[] = Object.keys(searchable);
-    select.forEach((field) => {
-      const key = field; // Adjust if you're using a mapping
-      queryBuilder.orWhere(`users.${key} ILIKE :search`, {
-        search: `%${quicksearch}%`,
-      });
-    });
-
-    // Execute the query and return results
-    return await queryBuilder.getMany();
   }
 
   // Handles order by conditions

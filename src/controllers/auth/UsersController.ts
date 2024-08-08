@@ -52,7 +52,6 @@ class UsersController {
   async updateUser(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
     try {
-      console.log(req.auth?.username);
       req.body.updated_by = req.auth?.username;
       req.body.updated_at = new Date();
       const updatedUser = await UsersRepository.update(Number(id), req.body);
