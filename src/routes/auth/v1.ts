@@ -50,6 +50,11 @@ router.put(
 );
 
 // Auth routes
+// router.get(
+//   "/authentications/me",
+//   jwtTokenManager.authenticateJWT,
+//   AuthenticationsController.me
+// );
 router.post(
   "/authentications",
   validateCreateAuth,

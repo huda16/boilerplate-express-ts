@@ -10,6 +10,7 @@ class AuthenticationsController {
       const authentication = await AuthenticationsRepository.createToken(
         req.body
       );
+
       return sendSuccessResponse({
         res,
         data: authentication,
@@ -51,6 +52,17 @@ class AuthenticationsController {
       });
     } catch (error) {
       console.error("Error deleting user:", error);
+      next(error);
+    }
+  }
+
+  // Get me
+  async me(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await AuthenticationsRepository.getMe(req.auth?.username);
+      return sendSuccessResponse({ res, data: user, statusCode: 200 });
+    } catch (error) {
+      console.error("Error updating user:", error);
       next(error);
     }
   }
