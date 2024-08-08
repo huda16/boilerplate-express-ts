@@ -270,7 +270,7 @@ export default class StandardRepo<T extends ObjectLiteral & Identifiable> {
     }
     try {
       // Create the base where condition
-      const whereCondition: FindOptionsWhere<T> = {};
+      const whereCondition: FindOptionsWhere<T> = payload || {};
       const queryBuilder = this.repository.createQueryBuilder("entity");
       if (whereCondition) {
         queryBuilder.where(whereCondition);

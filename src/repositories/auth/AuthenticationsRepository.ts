@@ -28,13 +28,14 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
     if (!this.repository) {
       throw new Error("Repository not initialized");
     }
-
+    console.log(data)
     const user = await this.userRepository.findOneBuilder(
       {
         username: data.username,
       },
-      ["password"]
+      ["id", "username", "password"]
     );
+    console.log(user)
     if (!user) {
       throw new ValidationError("User not found");
     }
@@ -138,10 +139,8 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
     await this.repository.remove(entity);
   }
 
-  async getMe(username: string): Promise<any> {
-    const user = await this.userRepository.findOneBy({
-      username: username,
-    });
+  async getMe(id: number): Promise<any> {
+    const user = await this.userRepository.findById(id);
     if (!user) {
       throw new ValidationError("User not found");
     }

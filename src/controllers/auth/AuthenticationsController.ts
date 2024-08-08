@@ -59,7 +59,7 @@ class AuthenticationsController {
   // Get me
   async me(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await AuthenticationsRepository.getMe(req.auth?.username);
+      const user = await AuthenticationsRepository.getMe(req.auth?.id);
       return sendSuccessResponse({ res, data: user, statusCode: 200 });
     } catch (error) {
       console.error("Error updating user:", error);
