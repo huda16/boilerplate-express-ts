@@ -76,13 +76,13 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
       throw new Error("Repository not initialized");
     }
 
-    const refreshToken = await this.repository.findOneBy({
-      token: data.refreshToken,
-    } as Partial<Authentications>);
+    // const refreshToken = await this.repository.findOneBy({
+    //   token: data.refreshToken,
+    // } as Partial<Authentications>);
 
-    if (!refreshToken) {
-      throw new ValidationError("Refresh token invalid");
-    }
+    // if (!refreshToken) {
+    //   throw new ValidationError("Refresh token invalid");
+    // }
 
     await this.tokenManager.verifyRefreshToken(data.refreshToken);
     const payload = await this.tokenManager.decodePayload(data.refreshToken);
@@ -102,13 +102,13 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
     const refreshTokenExpiresAt = refreshDecode.exp;
 
     // Update the refresh token in the database
-    const entity = await this.repository.findOneBy({
-      token: data.refreshToken,
-    } as Partial<Authentications>);
-    if (entity) {
-      entity.token = newRefreshToken;
-      await this.repository.save(entity);
-    }
+    // const entity = await this.repository.findOneBy({
+    //   token: data.refreshToken,
+    // } as Partial<Authentications>);
+    // if (entity) {
+    //   entity.token = newRefreshToken;
+    //   await this.repository.save(entity);
+    // }
 
     return {
       accessToken,
@@ -129,7 +129,7 @@ class AuthenticationsRepository extends StandardRepo<Authentications> {
     } as Partial<Authentications>);
 
     if (!entity) {
-      throw new ValidationError("Refresh token does not exist in Database")
+      throw new ValidationError("Refresh token does not exist in Database");
     }
 
     await this.repository.remove(entity);
