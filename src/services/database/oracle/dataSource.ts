@@ -16,7 +16,7 @@ export const OracleDataSource = new DataSource({
   serviceName: process.env.DB_SERVICENAME,
   synchronize: false,
   logging: false,
-  entities: [Users, Authentications],
+  entities: ["src/entities/**/*.ts"],
   migrations: ["src/migrations/**/*.ts"],
   subscribers: [],
   migrationsTableName: "typeorm_migrations",
