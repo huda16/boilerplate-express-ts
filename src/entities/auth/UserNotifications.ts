@@ -42,12 +42,12 @@ export class UserNotifications {
   @Column({ type: "varchar2", length: 255, nullable: true })
   deleted_by?: string;
 
-  @CreateDateColumn({ type: "timestamp", nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   created_at?: Date;
 
-  @UpdateDateColumn({ type: "timestamp", nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   updated_at?: Date;
 
-  @DeleteDateColumn({ type: "timestamp", nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   deleted_at?: Date;
 }
